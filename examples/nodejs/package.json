@@ -1,0 +1,25 @@
+{
+  "name": "cpp-http-server-wasm",
+  "version": "1.0.0",
+  "description": "Node.js integration for C++ HTTP Server WebAssembly module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test-client.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "axios": "^1.4.0"
+  },
+  "keywords": [
+    "http",
+    "server",
+    "webassembly",
+    "cpp",
+    "nodejs"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

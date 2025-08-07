@@ -1,0 +1,88 @@
+# Build directories
+build/
+build-*/
+out/
+
+# Compiled Object files
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+httpserver
+httpserver.exe
+
+# WebAssembly output files
+*.wasm
+*.js
+*.html
+
+# IDE/Editor files
+.vscode/
+.vs/
+*.vcxproj*
+*.sln
+*.suo
+*.user
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Test results
+Testing/
+*.xml
+*.log
+
+# SSL certificates (if any)
+*.pem
+*.key
+*.crt
+*.cert
+
+# Temporary files
+*.tmp
+*.temp
+
+# Coverage files
+*.gcov
+*.gcno
+*.gcda
+
+# Profiling files
+*.prof
+gmon.out
+
+# Package managers
+node_modules/
+.npm/
+
+# Environment files
+.env
+.env.local
