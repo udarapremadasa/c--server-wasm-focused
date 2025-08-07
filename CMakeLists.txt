@@ -71,6 +71,15 @@ endif()
 add_executable(httpserver src/main.cpp)
 target_link_libraries(httpserver httpserver_lib)
 
+# Compile definitions for main executable
+if(BUILD_WASM)
+    target_compile_definitions(httpserver PRIVATE BUILD_WASM=1)
+endif()
+
+if(ENABLE_SSL)
+    target_compile_definitions(httpserver PRIVATE ENABLE_SSL=1)
+endif()
+
 # WebAssembly specific settings
 if(BUILD_WASM)
     set_target_properties(httpserver PROPERTIES

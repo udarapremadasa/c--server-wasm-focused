@@ -58,7 +58,15 @@ bool HttpServer::start(int port, const std::string& host) {
     thread_pool_->start();
     is_running_ = true;
     
+#ifdef ENABLE_SSL
+    if (use_ssl_) {
+        LOG_INFO("HTTPS server started on " + host + ":" + std::to_string(port));
+    } else {
+        LOG_INFO("HTTP server started on " + host + ":" + std::to_string(port));
+    }
+#else
     LOG_INFO("HTTP server started on " + host + ":" + std::to_string(port));
+#endif
     
     // Accept connections
     socket_server_->accept([this](int client_socket) {
@@ -219,12 +227,41 @@ void HttpServer::handleConnection(int client_socket) {
         timeout.tv_usec = 0;
         setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
         
+#ifdef ENABLE_SSL
+        SSL* ssl_connection = nullptr;
+        if (use_ssl_ && ssl_server_) {
+            ssl_connection = ssl_server_->createSslConnection(client_socket);
+            if (!ssl_connection || !ssl_server_->performHandshake(ssl_connection)) {
+                LOG_ERROR("SSL handshake failed");
+                if (ssl_connection) {
+                    ssl_server_->closeSslConnection(ssl_connection);
+                }
+                close(client_socket);
+                return;
+            }
+        }
+#endif
+        
         // Read request
         char buffer[8192];
         std::string raw_request;
         
         ssize_t bytes_read;
-        while ((bytes_read = recv(client_socket, buffer, sizeof(buffer) - 1, 0)) > 0) {
+        while (true) {
+#ifdef ENABLE_SSL
+            if (use_ssl_ && ssl_connection) {
+                bytes_read = ssl_server_->sslRead(ssl_connection, buffer, sizeof(buffer) - 1);
+            } else {
+                bytes_read = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+            }
+#else
+            bytes_read = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+#endif
+            
+            if (bytes_read <= 0) {
+                break;
+            }
+            
             buffer[bytes_read] = '\0';
             raw_request += buffer;
             
@@ -235,6 +272,11 @@ void HttpServer::handleConnection(int client_socket) {
         }
         
         if (raw_request.empty()) {
+#ifdef ENABLE_SSL
+            if (ssl_connection) {
+                ssl_server_->closeSslConnection(ssl_connection);
+            }
+#endif
             close(client_socket);
             return;
         }
@@ -247,7 +289,17 @@ void HttpServer::handleConnection(int client_socket) {
         
         // Send response
         std::string response_str = response.toString();
+        
+#ifdef ENABLE_SSL
+        if (use_ssl_ && ssl_connection) {
+            ssl_server_->sslWrite(ssl_connection, response_str.c_str(), response_str.length());
+            ssl_server_->closeSslConnection(ssl_connection);
+        } else {
+            send(client_socket, response_str.c_str(), response_str.length(), 0);
+        }
+#else
         send(client_socket, response_str.c_str(), response_str.length(), 0);
+#endif
         
     } catch (const std::exception& e) {
         LOG_ERROR("Error handling connection: " + std::string(e.what()));

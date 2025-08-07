@@ -165,6 +165,9 @@ int main(int argc, char* argv[]) {
     // Parse command line arguments
     int port = 8080;
     std::string host = "0.0.0.0";
+    bool use_https = false;
+    std::string cert_file = "./certs/server.crt";
+    std::string key_file = "./certs/server.key";
     
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
@@ -172,20 +175,59 @@ int main(int argc, char* argv[]) {
             port = std::stoi(argv[++i]);
         } else if (arg == "--host" && i + 1 < argc) {
             host = argv[++i];
+        } else if (arg == "--https") {
+            use_https = true;
+            if (port == 8080) port = 8443; // Default HTTPS port
+        } else if (arg == "--cert" && i + 1 < argc) {
+            cert_file = argv[++i];
+        } else if (arg == "--key" && i + 1 < argc) {
+            key_file = argv[++i];
         } else if (arg == "--help") {
             std::cout << "Usage: " << argv[0] << " [options]\n";
             std::cout << "Options:\n";
-            std::cout << "  --port <port>    Port to listen on (default: 8080)\n";
+            std::cout << "  --port <port>    Port to listen on (default: 8080 for HTTP, 8443 for HTTPS)\n";
             std::cout << "  --host <host>    Host to bind to (default: 0.0.0.0)\n";
+            std::cout << "  --https          Enable HTTPS mode with SSL/TLS\n";
+            std::cout << "  --cert <file>    SSL certificate file (default: ./certs/server.crt)\n";
+            std::cout << "  --key <file>     SSL private key file (default: ./certs/server.key)\n";
             std::cout << "  --help           Show this help message\n";
+            std::cout << "\nExamples:\n";
+            std::cout << "  " << argv[0] << "                    # Start HTTP server on port 8080\n";
+            std::cout << "  " << argv[0] << " --https             # Start HTTPS server on port 8443\n";
+            std::cout << "  " << argv[0] << " --https --port 443  # Start HTTPS server on port 443\n";
             return 0;
         }
     }
     
     // Start server
-    if (!g_server->start(port, host)) {
-        LOG_ERROR("Failed to start server");
+    if (use_https) {
+#ifdef ENABLE_SSL
+        LOG_INFO("Starting HTTPS server on " + host + ":" + std::to_string(port));
+        LOG_INFO("Certificate: " + cert_file);
+        LOG_INFO("Private key: " + key_file);
+        
+        if (!g_server->startHttps(port, cert_file, key_file, host)) {
+            LOG_ERROR("Failed to start HTTPS server");
+            return 1;
+        }
+        
+        LOG_INFO("🔒 HTTPS server started successfully!");
+        LOG_INFO("🌐 Visit: https://" + (host == "0.0.0.0" ? "localhost" : host) + ":" + std::to_string(port));
+        LOG_INFO("⚠️  Browser will show security warning for self-signed certificate");
+#else
+        LOG_ERROR("SSL support not compiled in. Rebuild with ENABLE_SSL=ON");
         return 1;
+#endif
+    } else {
+        LOG_INFO("Starting HTTP server on " + host + ":" + std::to_string(port));
+        
+        if (!g_server->start(port, host)) {
+            LOG_ERROR("Failed to start HTTP server");
+            return 1;
+        }
+        
+        LOG_INFO("🌐 HTTP server started successfully!");
+        LOG_INFO("🌐 Visit: http://" + (host == "0.0.0.0" ? "localhost" : host) + ":" + std::to_string(port));
     }
     
     return 0;
