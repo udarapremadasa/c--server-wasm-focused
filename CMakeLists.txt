@@ -114,7 +114,6 @@ if(BUILD_TESTS)
             httpserver_tests
             httpserver_lib
             GTest::gtest_main
-            GTest::gmock_main
         )
     else()
         target_link_libraries(
@@ -128,7 +127,7 @@ if(BUILD_TESTS)
     if(GTest_FOUND)
         include(GoogleTest)
         gtest_discover_tests(httpserver_tests)
-    else
+    else()
         add_test(NAME httpserver_tests COMMAND httpserver_tests)
     endif()
 endif()

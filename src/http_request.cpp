@@ -40,6 +40,18 @@ bool HttpRequest::parse(const std::string& raw_request) {
         return false;
     }
     
+    // Basic validation
+    if (method_str.empty() || path_with_query.empty() || version.empty()) {
+        is_valid_ = false;
+        return false;
+    }
+    
+    // Validate HTTP version format
+    if (version.find("HTTP/") != 0) {
+        is_valid_ = false;
+        return false;
+    }
+    
     method_ = stringToMethod(method_str);
     version_ = version;
     
